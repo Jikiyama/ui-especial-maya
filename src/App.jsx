@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 function App() {
   // API Key state
@@ -61,15 +62,16 @@ function App() {
     setGeneratedImage(null)
 
     try {
-      // Use Gemini 3 Pro Image model (same as nanobananapro.py)
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image:generateContent?key=${apiKey}`
+      // Initialize Google Generative AI with user's API key
+      const genAI = new GoogleGenerativeAI(apiKey)
+      const model = genAI.getGenerativeModel({ model: "gemini-3-pro-image-preview" })
 
       // Build content parts - exactly like Python
-      const parts = [{ text: prompt }]
+      const parts = [prompt]
 
       // Add reference images if any (same format as Python)
       for (const img of referenceImages) {
-        parts.push({ text: `\n[Reference Image: ${img.name}]` })
+        parts.push(`\n[Reference Image: ${img.name}]`)
         const base64Data = img.data.split(',')[1]
         const mimeType = img.data.split(';')[0].split(':')[1]
         parts.push({
@@ -80,42 +82,26 @@ function App() {
         })
       }
 
-      // Match Python's GenerateContentConfig exactly
-      const requestBody = {
-        contents: [{ parts }],
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: parts.map(p => typeof p === 'string' ? { text: p } : p) }],
         generationConfig: {
           responseModalities: ["IMAGE"],
-          temperature: 1.0,
-          // Image config matching Python's types.ImageConfig
-          imageConfig: {
-            aspectRatio: aspectRatio,
-            imageSize: resolution
-          }
+          temperature: 1.0
         },
-        // Safety settings matching Python exactly
         safetySettings: [
           { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
           { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
           { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" }
         ]
-      }
-
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
       })
 
-      const response = await res.json()
-
-      if (response.error) {
-        throw new Error(response.error.message)
-      }
+      const response = result.response
 
       // Look for image in response
       let foundImage = false
-      if (response.candidates && response.candidates[0]) {
-        const candidate = response.candidates[0]
+      const candidates = response.candidates
+      if (candidates && candidates[0]) {
+        const candidate = candidates[0]
         if (candidate.content && candidate.content.parts) {
           for (const part of candidate.content.parts) {
             if (part.inlineData) {
