@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 
 function App() {
   // API Key state
@@ -62,18 +61,13 @@ function App() {
     setGeneratedImage(null)
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey)
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-2.0-flash-exp-image-generation',
-        generationConfig: {
-          responseModalities: ['Text', 'Image']
-        }
-      })
+      // Use Gemini 3 Pro Image model (same as nanobananapro.py)
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image:generateContent?key=${apiKey}`
 
-      // Build content parts
+      // Build content parts - exactly like Python
       const parts = [{ text: prompt }]
 
-      // Add reference images if any
+      // Add reference images if any (same format as Python)
       for (const img of referenceImages) {
         parts.push({ text: `\n[Reference Image: ${img.name}]` })
         const base64Data = img.data.split(',')[1]
@@ -86,15 +80,40 @@ function App() {
         })
       }
 
-      // Add image generation instructions
-      parts.push({
-        text: `\n\nGenerate an image with aspect ratio ${aspectRatio} and ${resolution} quality. Focus on creating the highest quality visual output.`
+      // Match Python's GenerateContentConfig exactly
+      const requestBody = {
+        contents: [{ parts }],
+        generationConfig: {
+          responseModalities: ["IMAGE"],
+          temperature: 1.0,
+          // Image config matching Python's types.ImageConfig
+          imageConfig: {
+            aspectRatio: aspectRatio,
+            imageSize: resolution
+          }
+        },
+        // Safety settings matching Python exactly
+        safetySettings: [
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" }
+        ]
+      }
+
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
       })
 
-      const result = await model.generateContent(parts)
-      const response = await result.response
+      const response = await res.json()
+
+      if (response.error) {
+        throw new Error(response.error.message)
+      }
 
       // Look for image in response
+      let foundImage = false
       if (response.candidates && response.candidates[0]) {
         const candidate = response.candidates[0]
         if (candidate.content && candidate.content.parts) {
@@ -107,13 +126,14 @@ function App() {
                 image: imageData,
                 timestamp: new Date().toLocaleTimeString()
               }, ...prev.slice(0, 9)])
+              foundImage = true
               break
             }
           }
         }
       }
 
-      if (!generatedImage) {
+      if (!foundImage) {
         setError('No image was returned. Try a different prompt or check your API quota.')
       }
 

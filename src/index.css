@@ -263,6 +263,17 @@ section h2 {
   gap: 0.75rem;
 }
 
+.radio-cards.two-col {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.model-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
 .radio-card {
   background: var(--bg-card);
   border: 2px solid var(--border);
@@ -308,6 +319,11 @@ section h2 {
 }
 
 /* Reference Images */
+.reference-section.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .reference-images {
   display: flex;
   flex-wrap: wrap;
