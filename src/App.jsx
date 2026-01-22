@@ -86,7 +86,12 @@ function App() {
         contents: [{ role: "user", parts: parts.map(p => typeof p === 'string' ? { text: p } : p) }],
         generationConfig: {
           responseModalities: ["IMAGE"],
-          temperature: 1.0
+          temperature: 1.0,
+          // Image config matching Python's types.ImageConfig
+          imageConfig: {
+            aspectRatio: aspectRatio,
+            imageSize: resolution
+          }
         },
         safetySettings: [
           { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
