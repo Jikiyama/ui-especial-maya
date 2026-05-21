@@ -1,5 +1,5 @@
 {
-  "name": "nano-banana-pro-ui",
+  "name": "gpt-image-pro-ui",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
+    "openai": "^4.73.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
