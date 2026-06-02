@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Generator from './components/Generator'
+import Editor from './components/Editor'
 import Gallery from './components/Gallery'
 import { hashApiKey } from './aws/hash'
 
@@ -67,6 +68,12 @@ function App() {
             Generate
           </button>
           <button
+            className={`tab-btn ${activeTab === 'editor' ? 'active' : ''}`}
+            onClick={() => setActiveTab('editor')}
+          >
+            Edit
+          </button>
+          <button
             className={`tab-btn ${activeTab === 'gallery' ? 'active' : ''}`}
             onClick={() => setActiveTab('gallery')}
           >
@@ -79,6 +86,7 @@ function App() {
       </header>
 
       {activeTab === 'generator' && <Generator apiKey={apiKey} userHash={userHash} />}
+      {activeTab === 'editor' && <Editor apiKey={apiKey} userHash={userHash} />}
       {activeTab === 'gallery' && <Gallery userHash={userHash} />}
     </div>
   )
